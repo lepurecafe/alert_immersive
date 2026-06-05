@@ -33,14 +33,13 @@ struct ContentView: View {
     @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
 
     @State private var isImmersiveOpen = false
-
     var body: some View {
         VStack(spacing: 20) {
             Text("Immersive Alert Test")
                 .font(.largeTitle)
                 .bold()
 
-            Text("ImmersiveSpace 안의 SwiftUI attachment에서 .alert가 표시되는지 확인하는 최소 예제입니다.")
+            Text("같은 RealityView attachment alert를 WindowGroup과 ImmersiveSpace에서 비교합니다.")
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -64,10 +63,53 @@ struct ContentView: View {
                 .disabled(!isImmersiveOpen)
             }
 
+            WindowAttachmentAlertView()
+                .frame(width: 360, height: 220)
+                .disabled(isImmersiveOpen)
+
             Text("Alert 확인 횟수: \(appModel.alertAcceptedCount)")
                 .font(.headline)
         }
         .padding(48)
+    }
+}
+
+struct WindowAttachmentAlertView: View {
+    @Environment(AppModel.self) private var appModel
+    @State private var isAlertPresented = false
+
+    var body: some View {
+        RealityView { content, attachments in
+            if let panel = attachments.entity(for: "windowAlertPanel") {
+                panel.position = SIMD3<Float>(0, 0, 0)
+                content.add(panel)
+            }
+        } attachments: {
+            Attachment(id: "windowAlertPanel") {
+                VStack(spacing: 16) {
+                    Text("WindowGroup 안의 attachment")
+                        .font(.headline)
+
+                    Button("Attachment Alert 띄우기") {
+                        print("Window attachment button tapped")
+                        isAlertPresented = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .padding(24)
+                .glassBackgroundEffect()
+                .alert("Window Attachment Alert", isPresented: $isAlertPresented) {
+                    Button("취소", role: .cancel) {}
+
+                    Button("확인") {
+                        appModel.alertAcceptedCount += 1
+                        print("Window attachment alert confirmed")
+                    }
+                } message: {
+                    Text("이 alert는 WindowGroup 안의 RealityView attachment에 붙어 있습니다.")
+                }
+            }
+        }
     }
 }
 
